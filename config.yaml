@@ -1,0 +1,17 @@
+server:
+  listen: ":8080"
+
+backend:
+  url: "http://localhost:8000"
+
+auth:
+  jwt_secret: "change-this-to-a-secure-random-string-in-production"
+  cookie_name: "auth_token"
+  cookie_secure: false
+  cookie_max_age: 24h
+  token_duration: 24h
+
+users:
+  - username: "admin"
+    password_hash: "$2a$10$OmhGQr8Fm4/Jae4/O27DWuHaTS/eyFnw12ILjeYd8fcXVTevNEUJi" 
+    # admin:admin

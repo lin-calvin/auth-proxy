@@ -1,0 +1,92 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-proxy-config
+data:
+  config.yaml: |
+    server:
+      listen: ":8080"
+
+    backend:
+      url: "http://backend-service:3000"
+
+    auth:
+      jwt_secret: "change-this-in-production"
+      cookie_name: "auth_token"
+      cookie_secure: false
+      cookie_max_age: 24h
+      token_duration: 24h
+
+    users:
+      - username: "admin"
+        password_hash: "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZRGdjGj/n3.qL2OhGxKdPqIhVMW3e"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-proxy
+  labels:
+    app: auth-proxy
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: auth-proxy
+  template:
+    metadata:
+      labels:
+        app: auth-proxy
+    spec:
+      containers:
+        - name: auth-proxy
+          image: auth-proxy:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+          volumeMounts:
+            - name: config
+              mountPath: /app/config.yaml
+              subPath: config.yaml
+          env:
+            - name: CONFIG_PATH
+              value: /app/config.yaml
+          resources:
+            requests:
+              memory: "64Mi"
+              cpu: "50m"
+            limits:
+              memory: "128Mi"
+              cpu: "200m"
+          livenessProbe:
+            httpGet:
+              path: /login
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /login
+              port: 8080
+            initialDelaySeconds: 2
+            periodSeconds: 5
+      volumes:
+        - name: config
+          configMap:
+            name: auth-proxy-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-proxy
+  labels:
+    app: auth-proxy
+spec:
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+      name: http
+  selector:
+    app: auth-proxy
