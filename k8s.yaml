@@ -39,7 +39,7 @@ spec:
     spec:
       containers:
         - name: auth-proxy
-          image: auth-proxy:latest
+          image: ghcr.io/lin-calvin/auth-proxy:latest
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
